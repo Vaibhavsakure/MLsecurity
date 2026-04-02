@@ -21,7 +21,7 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Load Models (paths relative to project root)
 # ---------------------------------------------------------------------------
-MODEL_DIR = os.path.join(os.path.dirname(__file__), "..")
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
 
 def _load(name: str):
     path = os.path.join(MODEL_DIR, name)
