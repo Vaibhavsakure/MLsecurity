@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Node
+node_modules/
+dist/
+
+# Test/temp files
+test_results*.json
+test_results*.txt
+retrain_log.txt
+retrain_output.txt
+test_models.py
+test_fb_actual.py
+print_results.py
+
+# Zip archive
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db
