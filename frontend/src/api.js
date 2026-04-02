@@ -1,4 +1,6 @@
-const API_BASE = "http://127.0.0.1:8000";
+// Use the environment variable if available (e.g., when deployed on Railway/Vercel)
+// Fall back to localhost:8000 for local development
+const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 export async function predictPlatform(platform, data) {
   const res = await fetch(`${API_BASE}/api/predict/${platform}`, {
