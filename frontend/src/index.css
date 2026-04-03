@@ -672,8 +672,8 @@ body::before {
   animation: fadeSlideUp 0.3s ease;
 }
 
-/* Google Button */
-.google-btn {
+/* Social Auth Buttons */
+.google-btn, .github-btn {
   width: 100%;
   display: flex;
   align-items: center;
@@ -691,7 +691,7 @@ body::before {
   transition: all var(--transition-fast);
 }
 
-.google-btn:hover {
+.google-btn:hover, .github-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: var(--border-glow);
   transform: translateY(-1px);
