@@ -62,6 +62,7 @@ export default function AnalysisForm({ config, onSubmit, loading }) {
                 placeholder={field.placeholder}
                 value={formData[field.key]}
                 onChange={(e) => handleChange(field.key, e.target.value)}
+                required
               />
             )}
           </div>

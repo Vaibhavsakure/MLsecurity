@@ -13,7 +13,7 @@ SocialGuard AI is a full-stack, machine-learning-powered application designed to
   - 📘 **Facebook:** Detects spam profiles based on community involvement, age, post-sharing habits, and URL spam.
 - **Advanced Machine Learning:** Powered by 4 custom-trained **XGBoost** classification models with high accuracy.
 - **Premium User Interface:** A stunning, fully responsive "dark glassmorphism" UI built with React.
-- **Secure Authentication:** Integrated with Firebase Authentication (Email/Password & Google Sign-In).
+- **Secure Authentication:** Integrated with Firebase Authentication (Email/Password, Google Sign-In & GitHub Sign-In).
 - **Fast Backend:** Real-time inference via a high-performance FastAPI Python backend.
 
 ## Tech Stack 🛠️
@@ -69,7 +69,7 @@ npm run dev
 The frontend will run at `http://localhost:5173`.
 
 ### 4. Firebase Configuration
-Make sure your Firebase configuration allows **Email/Password** and **Google Sign-In**. The configuration is currently located in `frontend/src/firebase.js`.
+Make sure your Firebase configuration allows **Email/Password**, **Google Sign-In**, and **GitHub Sign-In**. The configuration is located in `frontend/src/firebase.js`.
 
 ## API Endpoints 🛣️
 

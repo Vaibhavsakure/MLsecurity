@@ -1,6 +1,6 @@
 import { useAuth } from "./AuthContext";
 import { logout } from "../firebase";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -17,10 +17,10 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-content">
-        <a href="/" className="navbar-logo">
+        <Link to="/" className="navbar-logo">
           <div className="logo-icon">S</div>
           <span className="logo-text">SocialGuard AI</span>
-        </a>
+        </Link>
 
         {user && (
           <div className="navbar-user">

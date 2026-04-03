@@ -75,7 +75,7 @@ export default function SignupPage() {
         {error && <div className="auth-error">⚠️ {error}</div>}
 
         {/* Social Sign-In */}
-        <div className="social-buttons" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="social-buttons">
           <button className="google-btn" onClick={handleGoogle} type="button">
             <svg viewBox="0 0 24 24" width="20" height="20">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -175,6 +175,9 @@ function friendlyError(code) {
     case "auth/invalid-email": return "Invalid email address.";
     case "auth/weak-password": return "Password is too weak. Use at least 6 characters.";
     case "auth/too-many-requests": return "Too many attempts. Try again later.";
+    case "auth/account-exists-with-different-credential":
+      return "An account already exists with the same email using a different sign-in method.";
+    case "auth/popup-blocked": return "Pop-up blocked by browser. Please allow pop-ups.";
     default: return "Something went wrong. Please try again.";
   }
 }

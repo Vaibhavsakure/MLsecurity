@@ -6,6 +6,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   updateProfile,
   signOut,
 } from "firebase/auth";
@@ -37,5 +38,7 @@ export const signupWithEmail = async (name, email, password) => {
   await updateProfile(cred.user, { displayName: name });
   return cred;
 };
+
+export const resetPassword = (email) => sendPasswordResetEmail(auth, email);
 
 export const logout = () => signOut(auth);

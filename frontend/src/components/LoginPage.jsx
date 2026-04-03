@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginWithEmail, signInWithGoogle, signInWithGithub } from "../firebase";
+import { loginWithEmail, signInWithGoogle, signInWithGithub, resetPassword } from "../firebase";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleEmail = async (e) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
     try {
       await loginWithEmail(email, password);
@@ -25,6 +27,7 @@ export default function LoginPage() {
 
   const handleGoogle = async () => {
     setError(null);
+    setSuccess(null);
     try {
       await signInWithGoogle();
       navigate("/");
@@ -37,6 +40,7 @@ export default function LoginPage() {
 
   const handleGithub = async () => {
     setError(null);
+    setSuccess(null);
     try {
       await signInWithGithub();
       navigate("/");
@@ -44,6 +48,21 @@ export default function LoginPage() {
       if (err.code !== "auth/popup-closed-by-user") {
         setError(friendlyError(err.code));
       }
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setError(null);
+    setSuccess(null);
+    if (!email) {
+      setError("Enter your email address first, then click Forgot Password.");
+      return;
+    }
+    try {
+      await resetPassword(email);
+      setSuccess("Password reset email sent! Check your inbox.");
+    } catch (err) {
+      setError(friendlyError(err.code));
     }
   };
 
@@ -61,9 +80,10 @@ export default function LoginPage() {
         </div>
 
         {error && <div className="auth-error">⚠️ {error}</div>}
+        {success && <div className="auth-success">✅ {success}</div>}
 
         {/* Social Sign-In */}
-        <div className="social-buttons" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="social-buttons">
           <button className="google-btn" onClick={handleGoogle} type="button">
             <svg viewBox="0 0 24 24" width="20" height="20">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -113,6 +133,13 @@ export default function LoginPage() {
               autoComplete="current-password"
             />
           </div>
+          <button
+            type="button"
+            className="forgot-password-link"
+            onClick={handleForgotPassword}
+          >
+            Forgot password?
+          </button>
           <button type="submit" className="auth-submit-btn" disabled={loading}>
             {loading && <span className="spinner" />}
             {loading ? "Signing in..." : "Sign In"}
@@ -137,6 +164,9 @@ function friendlyError(code) {
     case "auth/wrong-password": return "Incorrect password.";
     case "auth/invalid-credential": return "Invalid email or password.";
     case "auth/too-many-requests": return "Too many attempts. Try again later.";
+    case "auth/account-exists-with-different-credential":
+      return "An account already exists with the same email using a different sign-in method.";
+    case "auth/popup-blocked": return "Pop-up blocked by browser. Please allow pop-ups.";
     default: return "Something went wrong. Please try again.";
   }
 }
