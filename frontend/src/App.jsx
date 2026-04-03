@@ -9,11 +9,16 @@ import Hero from "./components/Hero";
 import PlatformCard from "./components/PlatformCard";
 import AnalysisForm from "./components/AnalysisForm";
 import ResultDisplay from "./components/ResultDisplay";
+import HistoryPage from "./components/HistoryPage";
+import DashboardPage from "./components/DashboardPage";
 import Footer from "./components/Footer";
 import { PLATFORMS } from "./platforms";
 import { predictPlatform } from "./api";
+import { saveAnalysis } from "./firebase";
+import { useAuth } from "./components/AuthContext";
 
-function Dashboard() {
+function Home() {
+  const { user } = useAuth();
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -38,8 +43,14 @@ function Dashboard() {
     try {
       const res = await predictPlatform(selectedPlatform, data);
       setResult(res);
+      // Save to Firestore
+      if (user) {
+        saveAnalysis(user.uid, res).catch((err) =>
+          console.error("Failed to save analysis:", err)
+        );
+      }
     } catch (err) {
-      setError(err.message || "Failed to connect to the server. Make sure the backend is running.");
+      setError(err.message || "Failed to connect to the server.");
     } finally {
       setLoading(false);
     }
@@ -82,6 +93,7 @@ function Dashboard() {
           {!result ? (
             <AnalysisForm
               config={config}
+              platform={selectedPlatform}
               onSubmit={handleSubmit}
               loading={loading}
             />
@@ -90,6 +102,16 @@ function Dashboard() {
           )}
         </div>
       )}
+    </>
+  );
+}
+
+function ProtectedLayout({ children }) {
+  return (
+    <>
+      <Navbar />
+      {children}
+      <Footer />
     </>
   );
 }
@@ -104,9 +126,23 @@ export default function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <Navbar />
-              <Dashboard />
-              <Footer />
+              <ProtectedLayout><Home /></ProtectedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <ProtectedLayout><HistoryPage /></ProtectedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <ProtectedLayout><DashboardPage /></ProtectedLayout>
             </ProtectedRoute>
           }
         />

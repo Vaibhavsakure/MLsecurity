@@ -5,3 +5,6 @@ pandas
 scikit-learn
 xgboost
 numpy
+shap
+fpdf2
+httpx

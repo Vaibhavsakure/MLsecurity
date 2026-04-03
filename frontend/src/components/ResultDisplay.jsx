@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
+import ShapChart from "./ShapChart";
+import { downloadReport } from "../api";
 
-const CIRCUMFERENCE = 2 * Math.PI * 85; // radius = 85
+const CIRCUMFERENCE = 2 * Math.PI * 85;
 
 export default function ResultDisplay({ result, onReset }) {
   const [animatedPct, setAnimatedPct] = useState(0);
+  const [downloading, setDownloading] = useState(false);
 
   const pct = Math.round(result.probability * 100);
 
   useEffect(() => {
-    // Animate from 0 to actual percentage
     const timeout = setTimeout(() => setAnimatedPct(pct), 100);
     return () => clearTimeout(timeout);
   }, [pct]);
@@ -21,6 +23,26 @@ export default function ResultDisplay({ result, onReset }) {
       : result.risk_level === "medium"
       ? "var(--risk-medium)"
       : "var(--risk-high)";
+
+  const handleDownloadPDF = async () => {
+    setDownloading(true);
+    try {
+      await downloadReport({
+        platform: result.platform,
+        probability: result.probability,
+        risk_level: result.risk_level,
+        label: result.label,
+        message: result.message,
+        input_data: result.input_data || {},
+        feature_importances: result.feature_importances || [],
+        timestamp: new Date().toLocaleString(),
+      });
+    } catch (err) {
+      console.error("PDF download failed:", err);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="result-container glass-card">
@@ -57,10 +79,28 @@ export default function ResultDisplay({ result, onReset }) {
       {/* Message */}
       <p className="result-message">{result.message}</p>
 
-      {/* Reset */}
-      <button className="analyze-another-btn" onClick={onReset}>
-        ← Analyze Another Account
-      </button>
+      {/* SHAP Explanation */}
+      <ShapChart importances={result.feature_importances} />
+
+      {/* Action Buttons */}
+      <div className="result-actions">
+        <button className="analyze-another-btn" onClick={onReset}>
+          ← Analyze Another Account
+        </button>
+        <button
+          className="download-report-btn"
+          onClick={handleDownloadPDF}
+          disabled={downloading}
+        >
+          {downloading ? (
+            <>
+              <span className="spinner" /> Generating...
+            </>
+          ) : (
+            "📄 Download PDF Report"
+          )}
+        </button>
+      </div>
     </div>
   );
 }
