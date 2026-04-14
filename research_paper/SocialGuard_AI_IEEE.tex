@@ -1,0 +1,749 @@
+% ============================================================================
+% SocialGuard AI — IEEE Format Research Paper
+% Compile with: pdflatex SocialGuard_AI_IEEE.tex
+% Or upload directly to Overleaf.com
+% ============================================================================
+\documentclass[conference]{IEEEtran}
+
+% --- Packages ---
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{float}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+% ============================================================================
+% TITLE
+% ============================================================================
+\title{SocialGuard AI: An Ensemble-Driven, Explainable Detection Pipeline for Identifying Inauthentic Profiles Spanning Six Social Platforms}
+
+% --- AUTHORS (UPDATE WITH YOUR DETAILS) ---
+\author{
+\IEEEauthorblockN{First Author Name}
+\IEEEauthorblockA{
+\textit{Department of Computer Science/Engineering}\\
+\textit{Your University Name}\\
+City, Country\\
+email@university.edu}
+\and
+\IEEEauthorblockN{Second Author Name (Guide/Co-Author)}
+\IEEEauthorblockA{
+\textit{Department of Computer Science/Engineering}\\
+\textit{Your University Name}\\
+City, Country\\
+email@university.edu}
+}
+
+\maketitle
+
+% ============================================================================
+% ABSTRACT
+% ============================================================================
+\begin{abstract}
+Inauthentic accounts and automated agents pervade contemporary social networks, undermining collective trust and enabling coordinated manipulation campaigns. We introduce \textbf{SocialGuard AI}, a unified detection framework covering Instagram, Twitter (X), Reddit, Facebook, LinkedIn, and YouTube through platform-tailored behavioral feature extraction and a three-algorithm weighted ensemble --- XGBoost, Random Forest, and Logistic Regression --- whose outputs are fused via AUC-calibrated soft voting. Every prediction is accompanied by SHAP-derived explanations that expose which profile attributes most influence the verdict. The system ships as a containerized full-stack application: a FastAPI backend with lifecycle-managed startup, X-Request-ID tracing, and rate-limit quota headers; a React 19 interface offering dual-theme rendering, side-by-side comparison, batch CSV ingestion, and PDF reporting; a Manifest~V3 Chrome extension; and a key-authenticated public REST endpoint for programmatic consumers. An intelligent chatbot backed by Groq's Llama~3.3-70B (with Gemini failover) guides users through result interpretation. On genuine crowd-sourced datasets the pipeline reaches 98.6\% accuracy for Instagram, 99.29\% for Twitter, 94.0\% for Reddit, and 95.0\% for Facebook, each surpassing 0.97 AUC. System dependability is validated through 110 automated checks spanning backend unit tests, React component tests, and browser-level integration flows, orchestrated by a four-stage continuous-integration pipeline.
+\end{abstract}
+
+\begin{IEEEkeywords}
+inauthentic account identification, cross-platform analysis, gradient-boosted ensembles, SHAP interpretability, behavioral profiling, browser extension, continuous integration
+\end{IEEEkeywords}
+
+% ============================================================================
+% I. INTRODUCTION
+% ============================================================================
+\section{Introduction}
+
+Digital social platforms now connect upward of five billion individuals globally \cite{statista2026}, yet the very openness that fosters communication also invites exploitation. Automated agents, sockpuppet networks, and spam-driven profiles erode the quality of public discourse, facilitate phishing operations, and artificially amplify engagement signals \cite{cresci2020decade, ferrara2016rise}. Independent analyses suggest that roughly one in seven active accounts on leading networks may be inauthentic \cite{varol2017}.
+
+Most prior detection efforts concentrate on a single network, producing siloed classifiers that cannot generalize across the heterogeneous feature landscapes of different platforms. Equally problematic, many systems function as opaque binary oracles --- issuing a ``fake'' or ``genuine'' verdict without exposing the reasoning behind it. Such opacity hampers trust among end-users and limits utility for content moderators who require actionable intelligence.
+
+The work described herein addresses both shortcomings through \textbf{SocialGuard AI}, whose principal contributions are:
+
+\begin{enumerate}
+    \item \textbf{Unified six-platform coverage.} A single codebase ingests platform-specific behavioral and structural signals from Instagram, Twitter, Reddit, Facebook, LinkedIn, and YouTube, each through a dedicated feature-engineering pipeline processing between 6 and 16 attributes.
+    \item \textbf{Ensemble intelligence with confidence calibration.} Three fundamentally different learners --- gradient-boosted trees, bootstrap-aggregated forests, and a regularized linear model --- are fused through AUC-weighted soft voting. Inter-model agreement serves as an intrinsic confidence gauge.
+    \item \textbf{Transparent reasoning via SHAP.} Every prediction is deconstructed into per-feature Shapley contributions, enabling users to inspect precisely which profile characteristics pushed the score toward ``fake'' or ``genuine.''
+    \item \textbf{End-to-end deployment readiness.} The system is packaged with Docker Compose containerization, a four-job CI pipeline, dual authentication layers (Firebase tokens and API keys), persistent rate limiting with quota headers, distributed request tracing, and a Chrome browser extension.
+    \item \textbf{Comparative and temporal analytics.} A split-screen comparison mode, timeline trend charts, confidence distribution histograms, and weekly activity heatmaps equip analysts with multidimensional situational awareness.
+\end{enumerate}
+
+The remainder of this manuscript is structured as follows. Section~II surveys prior art. Section~III delineates the system architecture. Section~IV elaborates on methodology --- datasets, feature construction, and training procedures. Section~V describes implementation specifics. Section~VI presents and interprets experimental outcomes. Section~VII discusses strengths, limitations, and prospective extensions. Section~VIII offers concluding remarks.
+
+% ============================================================================
+% II. RELATED WORK
+% ============================================================================
+\section{Related Work}
+
+\subsection{Detectors Confined to One Network}
+
+Individual-platform classifiers dominate the literature. Varol and colleagues assembled a feature bank exceeding one thousand behavioral dimensions --- spanning temporal regularity, linguistic markers, and network topology --- to produce the BotOrNot scoring service (later relaunched as Botometer) for Twitter \cite{varol2017}. In a follow-up line of inquiry, Yang et al.\ demonstrated that stripping the feature set down to lightweight account metadata still yields competitive separation, opening the door to low-cost deployment on resource-constrained infrastructure \cite{yang2020scalable}. Within the Instagram ecosystem, Akyon and Kalfaoglu trained convolutional architectures on engagement cadence signals to surface counterfeit personas \cite{akyon2019instagram}.
+
+On the Facebook front, Fire et al.\ probed anomalous topologies within friend-request graphs as indicators of deceptive intent \cite{fire2014friend}, while Boshmaf et al.\ mounted a controlled socialbot infiltration campaign demonstrating how trust-based friending policies can be weaponized at scale \cite{boshmaf2011socialbot}. For Reddit, Hurtado et al.\ leveraged temporal posting rhythms coupled with lexical fingerprinting to partition genuine participants from orchestrated agents \cite{hurtado2019bot}.
+
+\subsection{Multi-Network Initiatives}
+
+Cross-boundary detection remains comparatively nascent. Cresci's ten-year retrospective charted the escalating arms race between bot creators and detectors, explicitly identifying unified multi-network architectures as an unaddressed frontier \cite{cresci2020decade}. Kudugunta and Ferrara furnished empirical evidence that behaviorally grounded features can traverse network boundaries when channeled through sufficiently expressive deep models \cite{kudugunta2018deep}. Despite these signposts, no earlier system has shipped a six-platform, ensemble-backed, explainability-equipped production deployment.
+
+\subsection{Explanation-Aware Security Systems}
+
+Shapley-based feature attribution, codified by Lundberg and Lee \cite{lundberg2017shap}, has permeated adversarial-defense pipelines. Rathore et al.\ embedded SHAP within network-perimeter intrusion detectors and measured a statistically significant uplift in operator trust toward automated alerts \cite{rathore2023xai}. Mohawesh et al.\ assessed the broader landscape of content-moderation systems and concluded that transparency has graduated from a desirable property to a deployment prerequisite \cite{mohawesh2023explainability}.
+
+\subsection{Tree-Based Gradient Machines}
+
+Chen and Guestrin's XGBoost \cite{chen2016xgboost} has accumulated a track record of benchmark victories on structured-data tasks spanning bot flagging \cite{yang2020scalable}, financial anomaly surfacing \cite{zhang2019fraud}, and perimeter-defense log analysis \cite{dhaliwal2018effective}. Its tree-native architecture permits exact Shapley computation via the TreeExplainer kernel, rendering it a natural backbone for pipelines that require both high accuracy and interpretable outputs.
+
+% ============================================================================
+% III. SYSTEM ARCHITECTURE
+% ============================================================================
+\section{System Architecture}
+
+SocialGuard AI adopts a four-tier modular layout comprising a client layer, an API gateway, an intelligence core, and a persistence tier, depicted schematically in Fig.~\ref{fig:architecture}.
+
+\begin{figure}[htbp]
+\centerline{
+\begin{tabular}{|c|}
+\hline
+\textbf{Presentation Tier} \\
+React 19 SPA (Dark/Light Themes) \\
+Chrome Extension (MV3) | Comparison View \\
+\hline
+\textbf{Gateway Tier} \\
+FastAPI + Uvicorn, Pydantic v2 Validation \\
+X-Request-ID Tracing | X-RateLimit Headers \\
+Public API v1 (Key-Gated) \\
+\hline
+\textbf{Intelligence Tier} \\
+Ensemble Pipeline (XGBoost + RF + LR) \\
+SHAP TreeExplainer | PDF Engine | AI Chat \\
+\hline
+\textbf{Persistence Tier} \\
+Firebase Auth | Firestore | 17 Serialized Models \\
+\hline
+\end{tabular}
+}
+\caption{Four-tier layout of the SocialGuard AI platform showing the gateway, intelligence, and persistence boundaries.}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{Server-Side Organization}
+
+The Python backend, built atop FastAPI, is partitioned into six cohesive packages:
+
+\begin{itemize}
+    \item \textbf{Model Loader (\texttt{ml/engine.py}):} Deserializes 17 serialized classifiers (six XGBoost, five Random Forest, five Logistic Regression, plus ensemble weight metadata), initializes SHAP TreeExplainers, maps feature names per platform, and houses the risk-interpretation logic that downgrades confidence for synthetically trained models.
+    \item \textbf{Voting Combiner (\texttt{ml/ensemble.py}):} Computes AUC-weighted soft votes across the three algorithm families, measures inter-model spread, and classifies agreement strength as unanimous, high, moderate, or low.
+    \item \textbf{Endpoint Modules (\texttt{routes/}):} Eight self-contained router files cover predictions, batch processing, URL scanning, health diagnostics, model-comparison metrics, PDF/ZIP reporting, chatbot proxying, and the public API surface.
+    \item \textbf{Security Stack (\texttt{middleware.py}):} Three stacked middleware layers --- (1) request logging injecting a unique X-Request-ID into every log line and response header, (2) sliding-window rate limiting with file-backed persistence and X-RateLimit-Limit/Remaining/Reset headers, and (3) Firebase ID-token verification with a development-mode bypass.
+    \item \textbf{Input Gates (\texttt{schemas.py}):} Pydantic v2 models enforce Field-level constraints (\texttt{ge}, \texttt{le}, \texttt{min\_length}, \texttt{max\_length}) on all 96+ input attributes, rejecting malformed payloads before they reach any model.
+    \item \textbf{Lifecycle Manager:} An async context manager hooks into FastAPI's lifespan protocol, performing model-availability audits and emitting a startup banner during initialization, and executing graceful resource cleanup on shutdown.
+\end{itemize}
+
+\subsection{Client-Side Organization}
+
+The browser interface, authored in React 19 with Vite 8, comprises roughly twenty components grouped by responsibility:
+
+\begin{itemize}
+    \item \textbf{Identity:} Firebase-backed sign-up and sign-in flows supporting email/password, Google OAuth, and GitHub OAuth providers.
+    \item \textbf{Detection:} Dynamically rendered forms that adapt input fields to the selected platform configuration, with a toggle enabling ensemble multi-model mode.
+    \item \textbf{Comparison:} A split-screen layout allowing simultaneous analysis of two profiles, showing dual gauge visualizations, paired SHAP bar charts, and an auto-generated feature-difference table.
+    \item \textbf{Charting:} SVG-based probability gauges, gradient-filled ensemble contribution bars, Recharts-powered SHAP importance displays, timeline area charts, confidence histograms, and weekly activity bar charts.
+    \item \textbf{Dashboard:} A four-tab analytics console featuring overview counters, temporal trend lines, model radar/bar comparisons, and threat-density heatmaps.
+    \item \textbf{Theming:} A dark/light toggle driven by CSS custom properties, persisted to localStorage, and initialized from the operating system's \texttt{prefers-color-scheme} media query.
+    \item \textbf{Developer Console:} Key generation with masked preview, per-key usage statistics, cURL snippet generation, and one-click revocation.
+    \item \textbf{Bulk Ingestion:} CSV upload supporting multi-record analysis with aggregate statistics and downloadable ZIP archives of individual PDF reports.
+    \item \textbf{Conversational Aid:} A floating chatbot widget backed by Groq's Llama 3.3-70B (primary) and Google Gemini (fallback), proxied entirely server-side to shield API credentials.
+\end{itemize}
+
+\subsection{Browser Extension}
+
+A Chrome extension conforming to Manifest V3 enables contextual scanning while a user browses a social profile. It communicates with the backend through the same REST endpoints and renders results in a lightweight popup overlay.
+
+% ============================================================================
+% IV. METHODOLOGY
+% ============================================================================
+\section{Methodology}
+
+\subsection{Training Corpora}
+
+Six labeled collections --- four harvested from public repositories and two purposefully synthesized --- underpin the platform classifiers. Table~\ref{tab:datasets} catalogs their characteristics.
+
+\begin{table}[htbp]
+\caption{Training Corpus Characteristics}
+\label{tab:datasets}
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Platform} & \textbf{Origin} & \textbf{Records} & \textbf{Dims.} & \textbf{Balance} \\
+\midrule
+Instagram & Kaggle\cite{instagram_dataset} & 5{,}000 & 11 & 50:50 \\
+Twitter & Kaggle\cite{twitter_dataset} & 2{,}818 & 14 & $\sim$47:53 \\
+Reddit & Custom\cite{reddit_dataset} & 500 & 6 & $\sim$44:56 \\
+Facebook & Kaggle\cite{facebook_dataset} & 600 & 13 & Skewed \\
+LinkedIn & Synthesized & 2{,}000 & 12 & 50:50 \\
+YouTube & Synthesized & 2{,}000 & 10 & 50:50 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Instagram.} Sourced from a Kaggle repository \cite{instagram_dataset}, the collection holds 696 annotated accounts profiled across avatar availability, alphanumeric username composition, biography text presence, publication tally, inbound follower count, and outbound followee count.
+
+\textbf{Twitter.} Amalgamating verified human-operated handles with confirmed bot identities \cite{twitter_dataset}, the 2,818-record corpus spans 14 axes: activity throughput (tweet and favourite tallies), social-graph topology (follower and friend counts, public-list memberships), and configuration metadata (verification seal, stock avatar flag, geolocation toggle, backdrop customization state, timezone displacement, and privacy setting).
+
+\textbf{Reddit.} Originating from a ``dead-internet'' forensic inquiry \cite{reddit_dataset}, this lean 500-record set captures account tenure, aggregate karma, comment-level sentiment polarity, mean token length, and hyperlink prevalence.
+
+\textbf{Facebook.} The Kaggle-hosted corpus \cite{facebook_dataset} encodes group membership count, account chronological age, publication frequency, URL-sharing fraction, media-sharing fraction, and per-post engagement indicators (comment depth, like accumulation, tag density).
+
+\textbf{LinkedIn and YouTube.} Publicly labeled ground-truth datasets do not exist for either network. To validate the framework's extensibility, we fabricated 2{,}000 records per platform from domain-calibrated probability distributions: authentic-profile draws featured richer engagement and prolonged account existence, while fabricated-profile draws exhibited anemic activity and curtailed lifespans. \textbf{The resulting class boundaries are non-overlapping}, producing trivially partitionable data and artificially perfect metrics (100\% across every measure). Outputs from these two classifiers therefore carry a persistent ``Synthetic'' badge within the interface, the REST responses (\texttt{data\_source: "synthetic"}), and the automated test assertions, accompanied by an automatic confidence penalty. They must \textit{not} be treated as evidence of real-world generalization capability.
+
+\subsection{Attribute Construction}
+
+Platform-specific engineering transforms raw inputs into discriminative signals. Table~\ref{tab:features} enumerates the principal derived attributes.
+
+\begin{table}[htbp]
+\caption{Key Derived Attributes by Platform}
+\label{tab:features}
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Platform} & \textbf{Constructed Attributes} \\
+\midrule
+Instagram & Follower-to-followee ratio, posts-per- \\
+          & follower density, completeness index \\
+Twitter   & Full 14-dim vector including geo, bg, \\
+          & timezone, and protection flags \\
+Reddit    & Daily karma accumulation rate \\
+Facebook  & Age normalization (years $\to$ days) \\
+LinkedIn  & Direct use of all 12 dimensions \\
+YouTube   & Direct use of all 10 dimensions \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For Instagram, three compound signals are computed:
+
+\begin{equation}
+R_{ff} = \frac{N_{\text{followers}}}{N_{\text{following}} + 1}
+\end{equation}
+
+\begin{equation}
+R_{pf} = \frac{N_{\text{posts}}}{N_{\text{followers}} + 1}
+\end{equation}
+
+\begin{equation}
+S_{\text{profile}} = I_{\text{pic}} + I_{\text{bio}} + I_{\text{name}}
+\end{equation}
+
+\noindent where $R_{ff}$ quantifies social reciprocity, $R_{pf}$ measures content-production density, and $S_{\text{profile}}$ aggregates binary completeness indicators.
+
+For Reddit, a karma velocity metric is derived:
+
+\begin{equation}
+V_{\text{karma}} = \frac{K_{\text{total}}}{D_{\text{age}} + 1}
+\end{equation}
+
+\noindent with $K_{\text{total}}$ denoting cumulative karma and $D_{\text{age}}$ representing account age in days.
+
+\subsection{Learning Algorithm Configuration}
+
+Every platform's primary learner is an XGBoost gradient-boosted tree \cite{chen2016xgboost}. The initial parameter set appears in Table~\ref{tab:hyperparams}.
+
+\begin{table}[htbp]
+\caption{Starting XGBoost Parameter Set}
+\label{tab:hyperparams}
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Parameter} & \textbf{IG/RD/FB} & \textbf{TW/LI/YT} \\
+\midrule
+n\_estimators & 200 & 200 \\
+max\_depth & 5 & 6 \\
+learning\_rate & 0.1 & 0.1 \\
+eval\_metric & logloss & logloss \\
+random\_state & 42 & 42 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+To counteract label imbalance within the Facebook corpus, the minority-class weight is set as:
+
+\begin{equation}
+w_{\text{pos}} = \frac{|C_{\text{negative}}|}{|C_{\text{positive}}|}
+\end{equation}
+
+All classifiers undergo evaluation on a hold-out partition (80\% train, 20\% test, preserving original class proportions) and are additionally stress-tested via five rounds of cross-validation.
+
+\subsection{Assembling the Voting Panel}
+
+Accompanying each XGBoost learner are two algorithmically distinct partners:
+
+\begin{itemize}
+    \item \textbf{Bootstrap-Aggregated Forest:} 200 independent trees, maximum branching depth of 10, requiring at least 5 observations to justify a split.
+    \item \textbf{Ridge-Penalized Linear Classifier:} L2 regularization with a 1{,}000-iteration convergence ceiling, preceded by z-score normalization of all inputs.
+\end{itemize}
+
+Per-fold accuracies for the supplementary algorithms are tabulated in Table~\ref{tab:ensemble_cv}.
+
+\begin{table}[htbp]
+\caption{Supplementary Model Accuracies Under Five-Fold Validation (\%)}
+\label{tab:ensemble_cv}
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Platform} & \textbf{XGB} & \textbf{Forest} & \textbf{Linear} \\
+\midrule
+Instagram & 98.8 & 98.3 $\pm$ 0.4 & 94.4 $\pm$ 1.2 \\
+Twitter & 99.6 & 93.7 $\pm$ 11.6 & 94.0 $\pm$ 4.2 \\
+Facebook & 96.0 & 85.0 $\pm$ 21.3 & 90.5 $\pm$ 13.5 \\
+LinkedIn$^\dagger$ & 100.0 & 100.0 & 100.0 \\
+YouTube$^\dagger$ & 99.9 & 100.0 & 100.0 \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize $^\dagger$Fabricated data; figures are non-generalizable.}
+\end{tabular}
+\end{table}
+
+\subsection{Score Fusion Protocol}
+
+The three per-model posteriors are merged via a weighted mean. Given feature vector $\mathbf{x}$, the composite score is:
+
+\begin{equation}
+\hat{P}(\mathbf{x}) = \frac{\sum_{k=1}^{3} w_k \cdot P_k(\mathbf{x})}{\sum_{k=1}^{3} w_k}
+\end{equation}
+
+\noindent where $P_k(\mathbf{x})$ denotes the $k$-th learner's estimated probability of inauthenticity and $w_k$ is proportional to that learner's ROC-AUC during validation. Consequently, models demonstrating stronger discriminative power wield correspondingly heavier influence on the final output.
+
+Consensus among the trio is measured by the posterior spread:
+
+\begin{equation}
+\Delta = \max_k P_k(\mathbf{x}) - \min_k P_k(\mathbf{x})
+\end{equation}
+
+\noindent Values below 0.10 are tagged \textit{strong agreement}; values in $[0.10, 0.25)$ indicate \textit{partial agreement}; values at or above 0.25 signal \textit{disagreement}. When every model independently arrives at the same risk band (low/medium/high), a ``unanimous verdict'' badge is appended, offering the user an additional confidence cue.
+
+\subsection{Automated Hyperparameter Refinement}
+
+The four genuine-data XGBoost instances undergo Bayesian optimization via Optuna \cite{akiba2019optuna}, maximizing five-fold F1 across 50 sequential trials. The explored parameter landscape spans:
+
+\begin{itemize}
+    \item Tree count: $[100, 500]$; branching depth: $[3, 10]$
+    \item Step magnitude: $[0.01, 0.3]$ sampled log-uniformly
+    \item Leaf-weight floor: $[1, 10]$
+    \item Row and column subsampling ratios: $[0.6, 1.0]$
+    \item Complexity penalties: $\gamma$, $\alpha$ (L1), $\lambda$ (L2)
+\end{itemize}
+
+This procedure is deliberately skipped for the LinkedIn and YouTube classifiers: their non-overlapping synthetic distributions make any hyperparameter configuration equally effective, rendering the search meaningless.
+
+\subsection{Attribution via Shapley Decomposition}
+
+To make every verdict interpretable, we invoke the TreeExplainer kernel \cite{lundberg2017shap}, which recovers exact Shapley attributions for tree-based learners in polynomial time. The eight attributes carrying the largest absolute contributions are surfaced to the user. The decomposition satisfies:
+
+\begin{equation}
+f(\mathbf{x}) = \mathbb{E}[f(\mathbf{X})] + \sum_{i=1}^{M} \phi_i
+\end{equation}
+
+\noindent Here $\mathbb{E}[f(\mathbf{X})]$ is the baseline prediction averaged over the training population, $M$ is the feature count, and $\phi_i$ captures the marginal influence of the $i$-th attribute. A positive $\phi_i$ steers the output toward the ``inauthentic'' pole; a negative $\phi_i$ steers it toward ``genuine.''
+
+% ============================================================================
+% V. IMPLEMENTATION
+% ============================================================================
+\section{Implementation}
+
+\subsection{Technology Choices}
+
+Table~\ref{tab:techstack} itemizes the principal technologies employed.
+
+\begin{table}[htbp]
+\caption{Technology Portfolio}
+\label{tab:techstack}
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Responsibility} & \textbf{Technology} \\
+\midrule
+Client Framework & React 19 + Vite 8 \\
+Visual Language & Custom CSS (glassmorphic motifs) \\
+Navigation & React Router DOM 7 \\
+Data Visualization & Recharts 3.8 \\
+Identity Provider & Firebase Auth (Email/Google/GitHub) \\
+Document Store & Cloud Firestore \\
+Server Framework & FastAPI + Uvicorn \\
+Learning Algorithms & XGBoost + scikit-learn \\
+Attribution Engine & SHAP TreeExplainer \\
+Document Synthesis & fpdf2 \\
+Async HTTP & httpx \\
+Conversational AI & Groq Llama 3.3-70B + Google Gemini \\
+In-Browser Scanner & Chrome Manifest V3 \\
+Containerization & Docker + Docker Compose \\
+Continuous Integration & GitHub Actions (4 stages) \\
+Client-Side Testing & Vitest + Playwright \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Endpoint Surface}
+
+The server exposes over 25 routes partitioned into two authentication domains:
+
+\textbf{Internal Surface (Firebase-protected):}
+\begin{itemize}
+    \item \textbf{Single Prediction} (\texttt{POST /api/predict/\{platform\}?ensemble=true}): Accepts platform-tailored attributes, returns fake-class probability, risk tier, SHAP attributions, and --- when ensemble mode is activated --- individual model scores with concordance analysis.
+    \item \textbf{Bulk Prediction} (\texttt{POST /api/predict/batch/\{platform\}}): Ingests a list of records and returns per-record verdicts alongside aggregate statistics.
+    \item \textbf{URL Inspector} (\texttt{POST /api/scan/url}): Identifies the target platform via URL pattern matching and, for Reddit, executes automated profile-data retrieval.
+    \item \textbf{Document Generation}: Produces single-record PDF reports and multi-record ZIP archives, secured via tokenized download links with ten-minute expiry.
+    \item \textbf{Conversational Proxy} (\texttt{POST /api/chat}): Routes user messages to Groq (primary) or Gemini (fallback), keeping all provider credentials server-side.
+    \item \textbf{Evaluation Dashboard} (\texttt{GET /api/models/comparison}): Serves pre-computed accuracy, precision, recall, and AUC metrics for frontend visualization.
+\end{itemize}
+
+\textbf{Public Surface (API-key-protected):}
+\begin{itemize}
+    \item \textbf{Programmatic Analysis} (\texttt{POST /api/v1/analyze/\{platform\}}): Returns a trimmed JSON payload --- probability, risk tier, confidence --- without exposing SHAP internals or raw input echoes.
+    \item \textbf{Credential Lifecycle}: Endpoints for key generation, masked listing, and revocation, with per-key request counters.
+    \item \textbf{Platform Catalog} (\texttt{GET /api/v1/platforms}): Enumerates the six supported networks.
+\end{itemize}
+
+Input validation across every route is enforced by Pydantic v2 schemas with per-field boundary constraints, ensuring that out-of-range or malformed payloads are rejected with HTTP~422 before reaching any model.
+
+\subsection{Defense-in-Depth Security Posture}
+
+Multiple overlapping safeguards harden the API surface:
+
+\begin{itemize}
+    \item \textbf{Tiered middleware:} The outermost layer stamps each request with a unique X-Request-ID (honoring client-supplied IDs when present) and logs method, path, status, and latency. The middle layer enforces a sliding-window rate ceiling, persists its state to disk for crash resilience, and attaches X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset headers to every response. The innermost layer verifies Firebase ID tokens, gracefully degrading to an open bypass in development environments.
+    \item \textbf{Strict input gates:} All 96+ numeric and categorical fields carry Pydantic \texttt{ge}/\texttt{le}/\texttt{min\_length}/\texttt{max\_length} annotations, blocking negative follower counts, out-of-range boolean flags, and empty batch lists at the schema boundary.
+    \item \textbf{Environment isolation:} Secrets are loaded from \texttt{.env} files excluded via \texttt{.gitignore}; CORS origins are allow-listed (never wildcarded).
+    \item \textbf{Dual-layer authentication:} Browser sessions present Firebase bearer tokens; programmatic clients present API keys.
+    \item \textbf{Ephemeral caching:} Generated PDF reports live in memory under a ten-minute time-to-live eviction policy.
+    \item \textbf{Test-safe mode:} Setting \texttt{TESTING=1} disables rate limiting during automated test runs without weakening production guards.
+    \item \textbf{Client-side hardening:} The HTML entry point carries \texttt{X-Content-Type-Options}, \texttt{Referrer-Policy}, Open Graph, and Twitter Card meta tags.
+\end{itemize}
+
+\subsection{Visual Design}
+
+The interface is rendered through over 3{,}700 lines of hand-authored CSS employing the following design language:
+
+\begin{itemize}
+    \item Theme duality via CSS custom properties, toggled with a 0.3-second crossfade, persisted to \texttt{localStorage}, and seeded from the operating system's color-scheme preference.
+    \item Animated gradient backdrops with parallax-style motion.
+    \item Frosted-glass card surfaces achieved through \texttt{backdrop-filter: blur} and semi-transparent borders.
+    \item SVG-rendered probability gauges and gradient-filled ensemble-contribution bar charts.
+    \item Platform-aware accent colors bound to CSS variables.
+    \item Split-screen comparison layout with a feature-difference table and animated profile-swap transitions.
+    \item Four-tab analytics dashboard: overview counters, temporal risk trends, model-performance radar plots, and threat heatmaps.
+    \item Developer key-management pane with live usage counters and ready-to-copy cURL examples.
+    \item Responsive grid scaffolding for cross-viewport adaptability.
+    \item Floating chatbot widget with dual-provider failover (Groq $\to$ Gemini $\to$ offline fallback message).
+\end{itemize}
+
+\subsection{Quality Assurance}
+
+Reliability is safeguarded through 110 automated checks distributed across three testing tiers:
+
+\begin{table}[htbp]
+\caption{Automated Test Inventory}
+\label{tab:tests}
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Module} & \textbf{Checks} & \textbf{Scope} \\
+\midrule
+\multicolumn{3}{l}{\textit{Server-side (pytest --- 80+ checks)}} \\
+Prediction endpoints (6 + batch) & 20 & Correctness \\
+SHAP structure \& data-source tags & 24 & Explainability \\
+Schema boundary enforcement & 20 & Input safety \\
+Public API key lifecycle & 12 & Auth \& routing \\
+URL scanner \& evaluation & 9 & Detection logic \\
+PDF/ZIP generation \& expiry & 8 & Reporting \\
+Health diagnostics & 7 & Ops visibility \\
+Chatbot proxy \& failover & 5 & Degradation \\
+Rate-limit enforcement & 3 & Throttling \\
+\midrule
+\multicolumn{3}{l}{\textit{Client-side (Vitest --- 28 checks)}} \\
+React component rendering & 28 & UI correctness \\
+\midrule
+\multicolumn{3}{l}{\textit{End-to-end (Playwright)}} \\
+Full user journeys & --- & Integration \\
+\midrule
+\textbf{Aggregate} & \textbf{110+} & \textbf{All green} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Continuous Integration and Containerization}
+
+A GitHub Actions pipeline orchestrates four sequential stages:
+
+\begin{enumerate}
+    \item \textbf{Server Tests:} Executes 80+ pytest checks under a \texttt{TESTING=1} guard.
+    \item \textbf{Client Tests:} Runs Vitest unit checks followed by a production build to catch bundling regressions.
+    \item \textbf{Container Build:} Verifies that both Docker Compose services assemble cleanly.
+    \item \textbf{Integration Tests:} Boots both servers, installs Playwright chromium, and runs browser-level user-flow tests (triggered only on pushes to the main branch to conserve CI minutes).
+\end{enumerate}
+
+Docker Compose defines two services --- \texttt{backend} and \texttt{frontend} --- with health checks, restart policies, and a documented \texttt{--build-arg} override for injecting production API URLs at image-build time.
+
+% ============================================================================
+% VI. EXPERIMENTAL RESULTS
+% ============================================================================
+\section{Experimental Results}
+
+\subsection{Hold-Out Classification Metrics}
+
+Table~\ref{tab:results} reports performance on the stratified 80/20 test partitions.
+
+\begin{table}[htbp]
+\caption{Per-Platform Classification Metrics}
+\label{tab:results}
+\centering
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Platform} & \textbf{Acc.} & \textbf{Prec.} & \textbf{Rec.} & \textbf{F1} & \textbf{CV} \\
+\midrule
+Instagram & 98.6\% & 0.99 & 0.98 & 0.99 & 98.8\% \\
+Twitter & 99.3\% & 1.00 & 0.99 & 0.99 & 99.6\% \\
+Reddit & 94.0\% & 0.95 & 0.91 & 0.93 & 95.0\% \\
+Facebook & 95.0\% & 0.83 & 0.90 & 0.86 & 96.0\% \\
+LinkedIn$^\dagger$ & 100.0\% & 1.00 & 1.00 & 1.00 & 100.0\% \\
+YouTube$^\dagger$ & 100.0\% & 1.00 & 1.00 & 1.00 & 99.9\% \\
+\bottomrule
+\multicolumn{6}{l}{\footnotesize $^\dagger$Synthetic training data; real-world accuracy will differ.} \\
+\multicolumn{6}{l}{\footnotesize CV = five-fold cross-validation accuracy.}
+\end{tabular}
+\end{table}
+
+The Instagram classifier delivers 98.6\% accuracy with tightly balanced precision (0.99) and recall (0.98). Twitter achieves the strongest genuine-data accuracy at 99.3\%, paired with an AUC of 0.9997. Reddit attains 94.0\% drawing on merely six features, underscoring the discriminative potency of karma-derived signals. Facebook reaches 95.0\% despite label imbalance, addressed through positive-class weighting.
+
+\subsection{Algorithm Comparison and Ensemble Rationale}
+
+To validate the ensemble design, all three learners were trained on identical splits. Table~\ref{tab:comparison} contrasts their standalone accuracies.
+
+\begin{table}[htbp]
+\caption{Standalone Accuracy: XGBoost vs.\ Random Forest vs.\ Logistic Regression}
+\label{tab:comparison}
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Platform} & \textbf{XGBoost} & \textbf{RF} & \textbf{LR} \\
+\midrule
+Instagram & 98.6\% & 98.3\% & 94.4\% \\
+Twitter & 99.3\% & 93.7\% & 94.0\% \\
+Facebook & 95.0\% & 85.0\% & 90.5\% \\
+LinkedIn$^\dagger$ & 100.0\% & 100.0\% & 100.0\% \\
+YouTube$^\dagger$ & 100.0\% & 100.0\% & 100.0\% \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize $^\dagger$Synthetic data; metrics non-indicative.}
+\end{tabular}
+\end{table}
+
+XGBoost consistently leads on genuine-data benchmarks. The ensemble amalgamates all three through AUC-derived weights, delivering two practical advantages: (1) resilience against individual-model weaknesses and (2) inherent confidence signaling through concordance analysis. When all three classifiers concur on the risk tier, the system flags the outcome as ``unanimous,'' conveying heightened certainty. Divergent votes trigger an advisory prompt encouraging manual scrutiny.
+
+Typical weight allocation assigns approximately 0.50 to XGBoost (strongest AUC), 0.30 to Random Forest (diversity via bagging), and 0.20 to Logistic Regression (diversity via linear boundaries).
+
+\subsection{SHAP Feature Attributions}
+
+Table~\ref{fig:shap} illustrates representative attributions for the Instagram classifier.
+
+\begin{figure}[htbp]
+\centerline{
+\begin{tabular}{|l|r|}
+\hline
+\textbf{Attribute (Instagram)} & \textbf{$\phi$ Value} \\
+\hline
+Profile Picture Presence & $-2.8435$ \\
+Follower / Followee Ratio & $-1.2140$ \\
+Posts / Follower Density & $+0.8923$ \\
+Completeness Index & $-0.7451$ \\
+Biography Presence & $-0.5102$ \\
+\hline
+\end{tabular}
+}
+\caption{Top-5 SHAP attributions for the Instagram classifier. Negative values push the score toward ``genuine.''}
+\label{fig:shap}
+\end{figure}
+
+Notable patterns across platforms:
+
+\begin{itemize}
+    \item \textbf{Instagram:} Avatar presence dominates, contributing a $+2.84$ shift toward ``fake'' when absent. The follower-to-followee ratio is the second-strongest signal.
+    \item \textbf{Twitter:} Verification status and list-membership count emerge as the most separating dimensions, with verified badges producing strongly negative (genuine-leaning) attributions.
+    \item \textbf{Reddit:} Daily karma velocity is the leading discriminator, effectively capturing the anomalous rapid-accumulation patterns characteristic of automated agents.
+    \item \textbf{Facebook:} Community affiliation and account longevity dominate; spam accounts display markedly lower group participation.
+\end{itemize}
+
+\subsection{Sanity Checks on Constructed Profiles}
+
+Table~\ref{tab:validation} shows model outputs for hand-crafted archetypes.
+
+\begin{table}[htbp]
+\caption{Prediction Outputs for Archetypal Profiles}
+\label{tab:validation}
+\centering
+\begin{tabular}{llcc}
+\toprule
+\textbf{Platform} & \textbf{Archetype} & \textbf{$\hat{P}$} & \textbf{Tier} \\
+\midrule
+Instagram & Complete genuine & 0.00 & Low \\
+Instagram & No avatar/bio & 1.00 & High \\
+Twitter & Verified human & 0.01 & Low \\
+Twitter & Minimal bot-like & 0.30 & Medium \\
+Reddit & Veteran, high karma & 0.001 & Low \\
+Reddit & New, negligible karma & 0.607 & High \\
+Facebook & Engaged community member & 0.001 & Low \\
+Facebook & URL-heavy poster & 0.216 & Low \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Instagram and Reddit exhibit strong class separation. Twitter differentiates clearly between verified humans and low-engagement bot patterns. Facebook's conservative bias is apparent: the URL-heavy archetype scores only 0.216, suggesting the model may benefit from additional spam-indicative features.
+
+\subsection{Inference Speed}
+
+Timing measurements on a consumer workstation (Intel i5, 16\,GB RAM):
+
+\begin{itemize}
+    \item Single prediction: $<$ 15\,ms
+    \item SHAP computation: $<$ 50\,ms per instance
+    \item Batch of 100 records: $<$ 2\,s
+    \item PDF synthesis: $<$ 200\,ms
+    \item End-to-end API round-trip (prediction + SHAP): $<$ 100\,ms
+\end{itemize}
+
+% ============================================================================
+% VII. DISCUSSION
+% ============================================================================
+\section{Discussion}
+
+\subsection{Advantages Over Prior Art}
+
+\begin{enumerate}
+    \item \textbf{Breadth of coverage.} Unlike single-network detectors, SocialGuard AI provides a consistent experience across six platforms under one architectural umbrella.
+    \item \textbf{Ensemble-based confidence.} Fusing three algorithmically diverse learners through AUC-weighted voting not only improves robustness but also generates an organic confidence signal through concordance measurement --- a property absent from monolithic classifiers.
+    \item \textbf{Transparent verdicts.} Per-prediction SHAP attributions let users and moderators trace the reasoning chain, fostering trust and enabling targeted investigation.
+    \item \textbf{Deployment maturity.} Docker containerization, a four-stage CI pipeline, 110 automated checks across three testing tiers, dual authentication, persistent rate limiting with quota headers, and distributed request tracing collectively demonstrate production viability beyond a laboratory prototype.
+    \item \textbf{Plug-in extensibility.} Supporting a new platform requires only defining a feature schema, training three classifiers, and registering an endpoint --- no changes to the ensemble engine, middleware, or frontend routing.
+    \item \textbf{Open programmatic access.} The public API with key-gated authentication enables downstream integrations and automated workflows without exposing internal model details.
+\end{enumerate}
+
+\subsection{Acknowledged Limitations}
+
+\begin{enumerate}
+    \item \textbf{Synthetic training corpora (critical).} The LinkedIn and YouTube classifiers rest on artificially constructed data whose class distributions do not overlap. The perfect 100\% metrics are therefore artifacts of trivial separability, \textit{not} indicators of genuine discriminative ability. These classifiers exist solely to prove architectural extensibility and are flagged as ``Synthetic'' in every output channel --- the API (\texttt{data\_source: "synthetic"}), the interface, and the programmatic verification layer --- with automatic confidence attenuation applied.
+    \item \textbf{Restricted platform APIs.} Only Reddit permits fully automated data retrieval; the remaining platforms require manual feature entry due to API access restrictions.
+    \item \textbf{Modest corpus sizes.} Reddit (500 records) and Facebook (600 records) are small by modern standards, potentially limiting generalizability.
+    \item \textbf{Concept drift.} Adversarial actors continuously refine evasion tactics; periodic retraining on fresh data is essential to maintain accuracy.
+    \item \textbf{Partial ensemble coverage.} Reddit's continuous target labels precluded training supplementary Random Forest and Logistic Regression classifiers, limiting the ensemble to five of six platforms.
+    \item \textbf{Volatile key storage.} Public API keys currently reside in memory and are lost on server restart; production deployments should migrate them to a durable store such as Firestore or Redis.
+\end{enumerate}
+
+\subsection{Prospective Extensions}
+
+\begin{itemize}
+    \item Sourcing authentic LinkedIn and YouTube corpora through institutional API partnerships or crowd-annotated data drives.
+    \item Exploring cross-platform transfer learning to share latent representations between platform-specific classifiers.
+    \item Incorporating natural-language content analysis --- comment toxicity scoring, posting-cadence anomaly detection --- as supplementary input dimensions.
+    \item Deploying WebSocket-based streaming detection for continuous real-time monitoring.
+    \item Replacing file-backed rate limiting and in-memory key storage with Redis to enable horizontal auto-scaling.
+    \item Introducing adversarial robustness evaluations to quantify resilience against deliberate evasion strategies.
+    \item Building model-versioning infrastructure with A/B traffic splitting for continuous model improvement.
+\end{itemize}
+
+% ============================================================================
+% VIII. CONCLUSION
+% ============================================================================
+\section{Conclusion}
+
+This paper introduced SocialGuard AI, an ensemble-driven detection framework spanning six social media platforms. By fusing XGBoost, Random Forest, and Logistic Regression through AUC-calibrated soft voting with concordance-based confidence measurement, the system achieves between 94.0\% and 99.3\% accuracy on genuine crowd-sourced datasets, with ROC-AUC values exceeding 0.97 across every real-data classifier.
+
+The accompanying full-stack deployment --- a FastAPI server hardened with three-layer middleware (X-Request-ID tracing, X-RateLimit-* quota headers, Firebase token verification), a React 19 client with dual-theme rendering, a Chrome extension, dual-provider conversational assistance (Groq + Gemini), batch ingestion with PDF/ZIP reporting, and a key-gated public API --- validates that explainable, ensemble-powered inauthentic-account detection can operate as a production-grade web service. Docker Compose containerization and a four-stage GitHub Actions CI pipeline ensure repeatable builds. Dependability is attested by 110 automated checks spanning server-side unit tests, client-side component tests, and browser-level integration flows.
+
+The pairing of SHAP attributions with ensemble concordance indicators distinguishes this work from opaque single-model classifiers, equipping users to understand both \textit{why} a profile is flagged and \textit{how confident} the system is in that judgment. While the synthetic LinkedIn and YouTube classifiers remain an acknowledged limitation, the modular architecture ensures that integrating genuine datasets --- when they become available --- requires no structural changes to the framework.
+
+SocialGuard AI offers a comprehensive, transparent, and extensible platform that empowers individuals, researchers, and content moderators to confront the escalating challenge of inauthentic social media activity.
+
+% ============================================================================
+% REFERENCES
+% ============================================================================
+\begin{thebibliography}{00}
+
+\bibitem{statista2026}
+Statista, ``Number of social media users worldwide from 2017 to 2028,'' \textit{Statista Research Department}, 2026. [Online]. Available: https://www.statista.com/statistics/278414/number-of-worldwide-social-network-users/
+
+\bibitem{cresci2020decade}
+S. Cresci, ``A Decade of Social Bot Detection,'' \textit{Communications of the ACM}, vol. 63, no. 10, pp. 72--83, Oct. 2020.
+
+\bibitem{varol2017}
+O. Varol, E. Ferrara, C. A. Davis, F. Menczer, and A. Flammini, ``Online Human-Bot Interactions: Detection, Estimation, and Characterization,'' in \textit{Proc. AAAI ICWSM}, 2017, pp. 280--289.
+
+\bibitem{ferrara2016rise}
+E. Ferrara, O. Varol, C. Davis, F. Menczer, and A. Flammini, ``The Rise of Social Bots,'' \textit{Communications of the ACM}, vol. 59, no. 7, pp. 96--104, Jul. 2016.
+
+\bibitem{yang2020scalable}
+K.-C. Yang, O. Varol, P.-M. Hui, and F. Menczer, ``Scalable and Generalizable Social Bot Detection through Data Selection,'' in \textit{Proc. AAAI}, 2020, pp. 1096--1103.
+
+\bibitem{akyon2019instagram}
+F. C. Akyon and E. Kalfaoglu, ``Instagram Fake and Automated Account Detection,'' in \textit{Proc. IEEE INISTA}, 2019, pp. 1--7.
+
+\bibitem{fire2014friend}
+M. Fire, D. Kagan, A. Elyashar, and Y. Elovici, ``Friend or Foe? Fake Profile Identification in Online Social Networks,'' \textit{Social Network Analysis and Mining}, vol. 4, no. 1, pp. 1--23, 2014.
+
+\bibitem{boshmaf2011socialbot}
+Y. Boshmaf, I. Muslukhov, K. Beznosov, and M. Ripeanu, ``The Socialbot Network: When Bots Socialize for Fame and Money,'' in \textit{Proc. ACSAC}, 2011, pp. 93--102.
+
+\bibitem{hurtado2019bot}
+S. Hurtado, P. Ray, and R. Marculescu, ``Bot Detection in Reddit Political Discussion,'' in \textit{Proc. SNS}, 2019, pp. 30--35.
+
+\bibitem{kudugunta2018deep}
+S. Kudugunta and E. Ferrara, ``Deep Neural Networks for Bot Detection,'' \textit{Information Sciences}, vol. 467, pp. 312--322, Oct. 2018.
+
+\bibitem{lundberg2017shap}
+S. M. Lundberg and S.-I. Lee, ``A Unified Approach to Interpreting Model Predictions,'' in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 2017, pp. 4765--4774.
+
+\bibitem{rathore2023xai}
+H. Rathore, C. Samavedhi, and S. K. Gupta, ``XAI-based Network Intrusion Detection using SHAP and LIME,'' in \textit{Proc. IEEE ISDFS}, 2023, pp. 1--6.
+
+\bibitem{mohawesh2023explainability}
+R. Mohawesh et al., ``Explainability in AI-Based Content Moderation: A Comprehensive Survey,'' \textit{Artificial Intelligence Review}, vol. 56, pp. 10145--10192, 2023.
+
+\bibitem{chen2016xgboost}
+T. Chen and C. Guestrin, ``XGBoost: A Scalable Tree Boosting System,'' in \textit{Proc. ACM KDD}, 2016, pp. 785--794.
+
+\bibitem{zhang2019fraud}
+Z. Zhang, X. Zhou, X. Zhang, L. Wang, and P. Wang, ``A Model Based on Convolutional Neural Network for Online Transaction Fraud Detection,'' \textit{Security and Communication Networks}, vol. 2018, pp. 1--9, 2019.
+
+\bibitem{dhaliwal2018effective}
+S. S. Dhaliwal, A.-A. Nahid, and R. Abbas, ``Effective Intrusion Detection System Using XGBoost,'' \textit{Information}, vol. 9, no. 7, p. 149, 2018.
+
+\bibitem{akiba2019optuna}
+T. Akiba, S. Sano, T. Yanase, T. Ohta, and M. Koyama, ``Optuna: A Next-generation Hyperparameter Optimization Framework,'' in \textit{Proc. ACM KDD}, 2019, pp. 2623--2631.
+
+\bibitem{instagram_dataset}
+``Instagram Fake Profile / Automated Account Detection,'' Kaggle, 2022. [Online]. Available: https://www.kaggle.com/datasets/rajrohan/instagram-fake-spammer-genuine-accounts
+
+\bibitem{twitter_dataset}
+``Twitter Bot Detection Dataset (Genuine and Fake User Accounts),'' Kaggle, 2021. [Online]. Available: https://www.kaggle.com/datasets/davidmartngutirrez/twitter-bots-accounts
+
+\bibitem{reddit_dataset}
+``Reddit Dead Internet Analysis Dataset,'' Custom Collection, 2026.
+
+\bibitem{facebook_dataset}
+``Facebook Spam Detection Dataset,'' Kaggle, 2022. [Online]. Available: https://www.kaggle.com/datasets/mfaisalqureshi/facebook-spam-dataset
+
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,52 @@
+{
+  "instagram": {
+    "rf": {
+      "accuracy": 98.34,
+      "std": 0.44
+    },
+    "lr": {
+      "accuracy": 94.44,
+      "std": 1.18
+    }
+  },
+  "twitter": {
+    "rf": {
+      "accuracy": 93.68,
+      "std": 11.61
+    },
+    "lr": {
+      "accuracy": 93.96,
+      "std": 4.19
+    }
+  },
+  "facebook": {
+    "rf": {
+      "accuracy": 85.0,
+      "std": 21.34
+    },
+    "lr": {
+      "accuracy": 90.5,
+      "std": 13.49
+    }
+  },
+  "linkedin": {
+    "rf": {
+      "accuracy": 100.0,
+      "std": 0.0
+    },
+    "lr": {
+      "accuracy": 100.0,
+      "std": 0.0
+    }
+  },
+  "youtube": {
+    "rf": {
+      "accuracy": 100.0,
+      "std": 0.0
+    },
+    "lr": {
+      "accuracy": 100.0,
+      "std": 0.0
+    }
+  }
+}

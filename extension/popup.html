@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SocialGuard AI</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <!-- Header -->
+    <div class="popup-header">
+      <div class="popup-logo">
+        <div class="logo-icon">S</div>
+        <span class="logo-text">SocialGuard AI</span>
+      </div>
+      <span class="popup-badge">Extension</span>
+    </div>
+
+    <!-- Status -->
+    <div id="status-section" class="status-section">
+      <div class="status-icon">🔍</div>
+      <p id="status-text">Detecting social media profile...</p>
+    </div>
+
+    <!-- Scan Button -->
+    <div id="scan-section" class="scan-section hidden">
+      <div class="detected-platform">
+        <span id="platform-icon" class="platform-icon-mini"></span>
+        <span id="platform-name"></span>
+        <span id="username-display" class="username"></span>
+      </div>
+      <button id="scan-btn" class="scan-btn">🔍 Scan This Profile</button>
+    </div>
+
+    <!-- Result -->
+    <div id="result-section" class="result-section hidden">
+      <div class="result-gauge">
+        <svg class="gauge-svg-mini" viewBox="0 0 120 120">
+          <circle class="gauge-bg-mini" cx="60" cy="60" r="50" />
+          <circle id="gauge-fill" class="gauge-fill-mini" cx="60" cy="60" r="50" />
+        </svg>
+        <div class="gauge-text-mini">
+          <span id="gauge-pct" class="gauge-pct">0%</span>
+          <span class="gauge-label-mini">Risk</span>
+        </div>
+      </div>
+      <div id="risk-badge" class="risk-badge"></div>
+      <p id="risk-message" class="risk-message"></p>
+      <button id="reset-btn" class="reset-btn">← Scan Another</button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-section" class="loading-section hidden">
+      <div class="spinner-mini"></div>
+      <p>Analyzing profile...</p>
+    </div>
+
+    <!-- Settings -->
+    <div class="popup-footer">
+      <label>Backend URL:</label>
+      <input type="text" id="api-url" class="api-url-input" placeholder="http://127.0.0.1:8000" />
+      <button id="save-url" class="save-url-btn">Save</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

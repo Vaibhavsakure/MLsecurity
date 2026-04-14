@@ -24,6 +24,8 @@ export default function HistoryPage() {
     twitter: "#1DA1F2",
     reddit: "#FF4500",
     facebook: "#1877F2",
+    linkedin: "#0A66C2",
+    youtube: "#FF0000",
   };
 
   const riskIcons = { low: "✅", medium: "⚠️", high: "🚨" };
@@ -52,7 +54,7 @@ export default function HistoryPage() {
 
       {/* Filters */}
       <div className="history-filters">
-        {["all", "instagram", "twitter", "reddit", "facebook"].map((p) => (
+        {["all", "instagram", "twitter", "reddit", "facebook", "linkedin", "youtube"].map((p) => (
           <button
             key={p}
             className={`filter-chip ${filter === p ? "active" : ""}`}

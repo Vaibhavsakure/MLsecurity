@@ -1,0 +1,53 @@
+# ============================================================================
+# SocialGuard AI — Docker Compose
+# Usage: docker-compose up --build
+#
+# Environment:
+#   Copy backend/.env.example → backend/.env and fill in your keys before running.
+#   VITE_API_URL is baked into the frontend bundle at build time.
+#   For local dev, http://localhost:8000 is correct (browser → Docker host port).
+#   For production (Vercel → Railway), set VITE_API_URL in Vercel env vars instead.
+# ============================================================================
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ALLOWED_ORIGINS=http://localhost:4173,http://localhost:5173
+    volumes:
+      - ./backend/models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; r=httpx.get('http://localhost:8000/api/health'); assert r.status_code==200"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Baked into the Vite bundle at build time.
+        # For local Docker dev, localhost:8000 is correct (browser hits Docker host).
+        # For production builds, override via: docker compose build --build-arg VITE_API_URL=https://your.railway.app
+        VITE_API_URL: http://localhost:8000
+    ports:
+      - "4173:4173"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4173/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped

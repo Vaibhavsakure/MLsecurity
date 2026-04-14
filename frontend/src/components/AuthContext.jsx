@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
 
@@ -16,6 +16,20 @@ export function AuthProvider({ children }) {
     return unsub;
   }, []);
 
+  /**
+   * Get a fresh Firebase ID token for API calls.
+   * Returns null if no user is signed in.
+   */
+  const getIdToken = useCallback(async () => {
+    if (!user) return null;
+    try {
+      return await user.getIdToken();
+    } catch (err) {
+      console.error("Failed to get ID token:", err);
+      return null;
+    }
+  }, [user]);
+
   if (loading) {
     return (
       <div className="auth-loading">
@@ -26,7 +40,9 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, getIdToken }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 

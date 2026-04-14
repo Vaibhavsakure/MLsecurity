@@ -1,0 +1,28 @@
+SocialGuard AI - Hyperparameter Tuning Report
+==================================================
+Trials per platform: 50
+CV folds: 5
+
+Instagram:
+  Default F1: 0.9881 ± 0.0039
+  Tuned F1:   0.9883 ± 0.0014
+  Δ F1:       +0.0002
+  Params:     {'n_estimators': 450, 'max_depth': 5, 'learning_rate': 0.02941035658208754, 'min_child_weight': 1, 'subsample': 0.9492539725135773, 'colsample_bytree': 0.6772451381767792, 'gamma': 0.27200232743384634, 'reg_alpha': 0.05491265806394292, 'reg_lambda': 0.16098476412053525}
+
+Twitter:
+  Default F1: 0.9955 ± 0.0025
+  Tuned F1:   0.9970 ± 0.0023
+  Δ F1:       +0.0015
+  Params:     {'n_estimators': 400, 'max_depth': 6, 'learning_rate': 0.02797269181533676, 'min_child_weight': 1, 'subsample': 0.9988412053017504, 'colsample_bytree': 0.7794250128220979, 'gamma': 0.04702538402756165, 'reg_alpha': 9.331024742834602e-08, 'reg_lambda': 0.03203078267366661}
+
+Reddit:
+  Default F1: 0.9414 ± 0.0160
+  Tuned F1:   0.9622 ± 0.0188
+  Δ F1:       +0.0208
+  Params:     {'n_estimators': 300, 'max_depth': 6, 'learning_rate': 0.01072743042502276, 'min_child_weight': 1, 'subsample': 0.8922829139371473, 'colsample_bytree': 0.7043457078695664, 'gamma': 4.296671741512149, 'reg_alpha': 2.681306864390812e-07, 'reg_lambda': 0.0025662734562311015}
+
+Facebook:
+  Default F1: 0.8848 ± 0.0266
+  Tuned F1:   0.9040 ± 0.0331
+  Δ F1:       +0.0192
+  Params:     {'n_estimators': 200, 'max_depth': 5, 'learning_rate': 0.17714264667337412, 'min_child_weight': 7, 'subsample': 0.7541271044130804, 'colsample_bytree': 0.6114390644593765, 'gamma': 2.3842344338846555, 'reg_alpha': 1.3607878050610318, 'reg_lambda': 1.766456934998816}

@@ -1,6 +1,7 @@
 import { useAuth } from "./AuthContext";
 import { logout } from "../firebase";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -17,8 +18,11 @@ export default function Navbar() {
 
   const navLinks = [
     { to: "/", label: "Analyze" },
+    { to: "/batch", label: "Batch" },
+    { to: "/compare", label: "Compare" },
     { to: "/dashboard", label: "Dashboard" },
     { to: "/history", label: "History" },
+    { to: "/api-keys", label: "API" },
   ];
 
   return (
@@ -44,6 +48,7 @@ export default function Navbar() {
             </div>
 
             <div className="navbar-user">
+              <ThemeToggle />
               <div className="user-avatar">{initial.toUpperCase()}</div>
               <span className="user-name">{displayName}</span>
               <button className="logout-btn" onClick={handleLogout} title="Sign out">

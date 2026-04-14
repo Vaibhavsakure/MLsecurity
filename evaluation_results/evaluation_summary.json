@@ -1,0 +1,178 @@
+{
+  "instagram": {
+    "accuracy": 98.6,
+    "precision": 0.9899,
+    "recall": 0.982,
+    "f1_score": 0.9859,
+    "auc": 0.9994,
+    "cv_mean": 98.82,
+    "cv_std": 0.38,
+    "samples": 5000,
+    "features": 11,
+    "data_source": "real_world",
+    "comparison": {
+      "XGBoost": {
+        "accuracy": 98.6,
+        "auc": 0.9994,
+        "f1_score": 0.9859
+      },
+      "Random Forest": {
+        "accuracy": 98.5,
+        "auc": 0.9995,
+        "f1_score": 0.9849
+      },
+      "Logistic Regression": {
+        "accuracy": 95.6,
+        "auc": 0.9899,
+        "f1_score": 0.9559
+      }
+    }
+  },
+  "twitter": {
+    "accuracy": 99.29,
+    "precision": 0.9962,
+    "recall": 0.9888,
+    "f1_score": 0.9925,
+    "auc": 0.9997,
+    "cv_mean": 99.57,
+    "cv_std": 0.24,
+    "samples": 2818,
+    "features": 14,
+    "data_source": "real_world",
+    "comparison": {
+      "XGBoost": {
+        "accuracy": 99.29,
+        "auc": 0.9997,
+        "f1_score": 0.9925
+      },
+      "Random Forest": {
+        "accuracy": 99.11,
+        "auc": 0.9996,
+        "f1_score": 0.9906
+      },
+      "Logistic Regression": {
+        "accuracy": 93.79,
+        "auc": 0.9857,
+        "f1_score": 0.9381
+      }
+    }
+  },
+  "reddit": {
+    "accuracy": 94.0,
+    "precision": 0.9524,
+    "recall": 0.9091,
+    "f1_score": 0.9302,
+    "auc": 0.9923,
+    "cv_mean": 95.0,
+    "cv_std": 1.26,
+    "samples": 500,
+    "features": 6,
+    "data_source": "real_world",
+    "comparison": {
+      "XGBoost": {
+        "accuracy": 94.0,
+        "auc": 0.9923,
+        "f1_score": 0.9302
+      },
+      "Random Forest": {
+        "accuracy": 95.0,
+        "auc": 0.9905,
+        "f1_score": 0.9412
+      },
+      "Logistic Regression": {
+        "accuracy": 93.0,
+        "auc": 0.9899,
+        "f1_score": 0.9157
+      }
+    }
+  },
+  "facebook": {
+    "accuracy": 95.0,
+    "precision": 0.8261,
+    "recall": 0.9048,
+    "f1_score": 0.8636,
+    "auc": 0.975,
+    "cv_mean": 96.0,
+    "cv_std": 0.97,
+    "samples": 600,
+    "features": 13,
+    "data_source": "real_world",
+    "comparison": {
+      "XGBoost": {
+        "accuracy": 95.0,
+        "auc": 0.975,
+        "f1_score": 0.8636
+      },
+      "Random Forest": {
+        "accuracy": 95.83,
+        "auc": 0.9709,
+        "f1_score": 0.8837
+      },
+      "Logistic Regression": {
+        "accuracy": 95.83,
+        "auc": 0.9836,
+        "f1_score": 0.8837
+      }
+    }
+  },
+  "linkedin": {
+    "accuracy": 100.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "auc": 1.0,
+    "cv_mean": 100.0,
+    "cv_std": 0.0,
+    "samples": 2000,
+    "features": 12,
+    "data_source": "synthetic",
+    "comparison": {
+      "XGBoost": {
+        "accuracy": 100.0,
+        "auc": 1.0,
+        "f1_score": 1.0
+      },
+      "Random Forest": {
+        "accuracy": 100.0,
+        "auc": 1.0,
+        "f1_score": 1.0
+      },
+      "Logistic Regression": {
+        "accuracy": 100.0,
+        "auc": 1.0,
+        "f1_score": 1.0
+      }
+    },
+    "disclaimer": "This model was trained on synthetically generated data. Metrics may not reflect real-world performance."
+  },
+  "youtube": {
+    "accuracy": 100.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "auc": 1.0,
+    "cv_mean": 99.95,
+    "cv_std": 0.1,
+    "samples": 2000,
+    "features": 10,
+    "data_source": "synthetic",
+    "comparison": {
+      "XGBoost": {
+        "accuracy": 100.0,
+        "auc": 1.0,
+        "f1_score": 1.0
+      },
+      "Random Forest": {
+        "accuracy": 100.0,
+        "auc": 1.0,
+        "f1_score": 1.0
+      },
+      "Logistic Regression": {
+        "accuracy": 100.0,
+        "auc": 1.0,
+        "f1_score": 1.0
+      }
+    },
+    "disclaimer": "This model was trained on synthetically generated data. Metrics may not reflect real-world performance."
+  }
+}

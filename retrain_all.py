@@ -1,9 +1,13 @@
+import os
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import accuracy_score, classification_report
 from xgboost import XGBClassifier
 import joblib
+
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "backend", "models")
+os.makedirs(MODEL_DIR, exist_ok=True)
 
 # ====================================================================
 # RETRAIN FACEBOOK MODEL
@@ -29,7 +33,6 @@ fb_model = XGBClassifier(
     n_estimators=200,
     max_depth=5,
     learning_rate=0.1,
-    use_label_encoder=False,
     eval_metric="logloss",
     random_state=42,
     scale_pos_weight=len(y_train[y_train==0]) / max(len(y_train[y_train==1]), 1)
@@ -44,7 +47,7 @@ print(classification_report(y_test, fb_pred, target_names=["Real", "Spam"]))
 cv_scores = cross_val_score(fb_model, X_fb, y_fb, cv=5, scoring="accuracy")
 print("Cross-val accuracy:", round(cv_scores.mean() * 100, 2), "%")
 
-joblib.dump(fb_model, "facebook_spam_detector.pkl")
+joblib.dump(fb_model, os.path.join(MODEL_DIR, "facebook_spam_detector.pkl"))
 print("Facebook model saved.\n")
 
 # ====================================================================
@@ -88,7 +91,6 @@ tw_model = XGBClassifier(
     n_estimators=200,
     max_depth=6,
     learning_rate=0.1,
-    use_label_encoder=False,
     eval_metric="logloss",
     random_state=42
 )
@@ -101,7 +103,7 @@ print(classification_report(y_test, tw_pred, target_names=["Real", "Bot"]))
 cv_scores = cross_val_score(tw_model, X_tw, y_tw, cv=5, scoring="accuracy")
 print("Cross-val accuracy:", round(cv_scores.mean() * 100, 2), "%")
 
-joblib.dump(tw_model, "twitter_bot_detector.pkl")
+joblib.dump(tw_model, os.path.join(MODEL_DIR, "twitter_bot_detector.pkl"))
 print("Twitter model saved.\n")
 
 # ====================================================================
@@ -129,7 +131,6 @@ rd_model = XGBClassifier(
     n_estimators=200,
     max_depth=5,
     learning_rate=0.1,
-    use_label_encoder=False,
     eval_metric="logloss",
     random_state=42
 )
@@ -142,7 +143,7 @@ print(classification_report(y_test, rd_pred, target_names=["Real", "Bot"]))
 cv_scores = cross_val_score(rd_model, X_rd, y_rd, cv=5, scoring="accuracy")
 print("Cross-val accuracy:", round(cv_scores.mean() * 100, 2), "%")
 
-joblib.dump(rd_model, "reddit_bot_detector.pkl")
+joblib.dump(rd_model, os.path.join(MODEL_DIR, "reddit_bot_detector.pkl"))
 print("Reddit model saved.\n")
 
 print("=" * 60)
