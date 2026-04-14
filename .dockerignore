@@ -3,8 +3,6 @@ __pycache__/
 *.pyo
 .git/
 .gitignore
-.env
-.env.example
 .pytest_cache/
 .rate_limit_state.json
 node_modules/
@@ -30,3 +28,5 @@ backend/.env
 backend/.env.example
 frontend/.env
 frontend/.env.example
+# Keep .env.production — needed for Vite build
+!frontend/.env.production
