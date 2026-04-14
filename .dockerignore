@@ -22,3 +22,11 @@ test_*.py
 train_*.py
 *.txt
 !requirements.txt
+!frontend/package.json
+!frontend/package-lock.json
+e2e/
+backend/tests/
+backend/.env
+backend/.env.example
+frontend/.env
+frontend/.env.example

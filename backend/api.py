@@ -122,3 +122,26 @@ app.include_router(scanner_router)
 app.include_router(evaluation_router)
 app.include_router(chatbot_router)
 app.include_router(public_api_router)
+
+# ---------------------------------------------------------------------------
+# Serve Frontend Static Files (production — built by Dockerfile)
+# ---------------------------------------------------------------------------
+_static_dir = os.path.join(os.path.dirname(__file__), "static")
+
+if os.path.isdir(_static_dir):
+    from fastapi.staticfiles import StaticFiles
+    from fastapi.responses import FileResponse
+
+    # Serve static assets (JS, CSS, images)
+    app.mount("/assets", StaticFiles(directory=os.path.join(_static_dir, "assets")), name="assets")
+
+    # SPA catch-all — return index.html for any non-API route
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """Serve the React SPA for all non-API routes."""
+        file_path = os.path.join(_static_dir, full_path)
+        if full_path and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(_static_dir, "index.html"))
+
+    logger.info("📦 Frontend static files mounted from %s", _static_dir)
