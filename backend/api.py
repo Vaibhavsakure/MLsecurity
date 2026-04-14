@@ -71,8 +71,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — configurable via environment variable (default: localhost dev origins)
-cors_origins_str = os.environ.get("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+# CORS — configurable via environment variable (default: vercel + localhost dev origins)
+cors_origins_str = os.environ.get("CORS_ORIGINS", "https://m-lsecurity-mh24.vercel.app,http://localhost:5173,http://127.0.0.1:5173")
 cors_origins = [origin.strip() for origin in cors_origins_str.split(",")]
 
 app.add_middleware(
